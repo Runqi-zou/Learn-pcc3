@@ -33,20 +33,41 @@ class AlienInvasion:
         # Set the background color.
         self.bg_color = self.settings.bg_color
 
+        # Start Alien Invasion in an active state.
+        self.game_active = True
+
     def run_game(self):
         """start the main loop for the game."""
         while True:
             # Watch for keyboard and mouse events.
             self._check_events()
-            self.ship.update()
-            self._update_bullets()
-            self._update_aliens()
+
+            if self.game_active:
+                self.ship.update()
+                self._update_bullets()
+                self._update_aliens()
+
             self._update_screen_()
             self.clock.tick(60)
 
     def _ship_hit(self):
-        """Response to the ship being hit by an alien."""
-        self.
+        """Response to ship being hit by alien."""
+        if self.stats.ships_left > 0:
+            # Decrement ships_left.
+            self.stats.ships_left -= 1
+
+            # Get rid of any remaining bullets and aliens.
+            self.bullets.empty()
+            self.aliens.empty()
+
+            # Create a new fleet and center the ship.
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Pause.
+            sleep(1)
+        else:
+            self.game_active = False
 
     def _check_events(self):
         """Respond to keypress and mouse events"""
@@ -110,7 +131,17 @@ class AlienInvasion:
 
         # Look for alien-ship collisions.
         if pygame.sprite.spritecollideany(self.ship, self.aliens):
-            print("======Ship hit!!!")
+            self._ship_hit()
+
+        # Look for aliens hitting the bottom of the screen.
+        self._check_aliens_bottom()
+
+    def _check_aliens_bottom(self):
+        """Check if any aliens have reached the bottom of the screen"""
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= self.screen.get_rect().height:
+                self._ship_hit()
+                break
 
     def _fire_bullet(self):
         """Create a new bullet and add it to the bullets group."""
